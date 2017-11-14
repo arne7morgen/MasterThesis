@@ -1,0 +1,249 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+
+
+
+\title{Thesis Filter Basics}
+\author{Arne Siebenmorgen }
+\date{October 2017}
+
+\begin{document}
+
+\maketitle
+
+\section{Opper}
+Filter Equation:
+\begin{align}
+    P(z,\theta | x_{t+1}) = \alpha \cdot P(x_{t+1} | \theta) \cdot \sum_{z'}P(z|z') \cdot P(z', \theta | x_{1:t})
+\end{align}
+\\
+Approximation $P(z,\theta) = P(z)P(\theta)$
+
+Einsetzten und Integration \"uber $\theta$:
+\begin{align}
+    P(z|x_{t+1}) &= \alpha \cdot \sum_{z'}P(z|z')P_t(z') \cdot \int P(x_{t+1}|\theta) P(\theta|x_{1:t}) d\theta 
+    \\
+    &= \alpha \cdot \sum_{z'}P(z|z')P_t(z') \cdot \int P(x_{t+1}|\theta_z) P(\theta_z|x_{1:t}) d\theta_z 
+\end{align}
+\\
+Approximation $ P(\theta) = P(\theta_1)P(\theta_2)$
+
+Einsetzen und \"uber $z$ summieren:
+\begin{align}
+   P(\theta|x_{t+1}) &= \alpha \cdot P(\theta | x_{1:t}) \cdot \sum_z P(x_{t+1} | \theta)  \sum_{z'}P(z|z')P_t(z')
+   \\
+   &= \alpha \cdot P(\theta | x_{1:t}) \cdot 
+    \left. \Bigg( \sum_{z'}P(z_1|z')P_t(z')  P(x_{t+1} | \theta) +\sum_{z'}P(z_2|z')P_t(z') \int P(\theta_2 | x_{1:t})P(x_{t+1}|\theta_2) \; d\theta_2 \right. \Bigg)
+\end{align}
+
+Berechnung vom Integral $\int P(x_{t+1}|\theta_z) P(\theta_z|x_{1:t}) d\theta_z$
+\begin{align}
+    &\int P(x_{t+1}|\theta_z) P(\theta_z|x_{1:t}) d\theta_z = \int \mathcal{N}(x_{t+1}|\mu_\theta,1) \mathcal{N}(\mu_\theta|\mu_{1:t},1) d\mu_\theta
+    \\
+    &= \int \frac{1}{\sqrt{2\pi}}\exp(-\frac{1}{2}(x_{t+1}-\mu_\theta)^2) \frac{1}{\sqrt{2\pi}}\exp(-\frac{1}{2}(\mu_\theta-\mu_{1:t})^2)d\mu_\theta
+    \\
+    &= \int \frac{1}{2\pi}\exp(-\frac{1}{2}(x_{t+1}^2-2x_{t+1}\mu_\theta + 2\mu_\theta^2 - 2\mu_\theta\mu_{1:t}+\mu_{1:t}^2))d\mu_\theta
+    \\
+    &= \int \frac{1}{2\pi}\exp(-\frac{1}{2}(2(\mu_\theta^2 - \mu_\theta^2(x_{t+1}+\mu_{1:t})+\frac{x_{t+1}^2}{2}+\frac{\mu_{1:t}^2}{2})))d\mu_\theta
+    \\
+    &= \int \frac{1}{2\pi}\exp(-\frac{1}{4}(\mu_\theta^2 - 2\mu_\theta\frac{x_{t+1}+\mu_{1:t}^2}{2} + \frac{x_{t+1}}{2} + \frac{\mu_{1:t}}{2} + \frac{x_{t+1}+\mu_{1:t}^2}{4} - \frac{x_{t+1}+\mu_{1:t}^2}{4}))d\mu_\theta
+    \\
+    &= \int \frac{1}{2\pi}\exp(-\frac{1}{4}(\mu_\theta^2 - 2\mu_\theta\frac{x_{t+1}+\mu_{1:t}^2}{2} + \frac{x_{t+1}}{2} + \frac{\mu_{1:t}}{2} + \frac{x_{t+1}+\mu_{1:t}^2}{4} - \frac{x_{t+1}+\mu_{1:t}^2}{4}))d\mu_\theta
+    \\
+    &= \int \frac{1}{2\pi}\exp(-\frac{1}{2}\frac{(\mu_\theta - \frac{(x+\mu_{1:t})^2}{2})^2}{1/2})\exp(\frac{(x+\mu_{1:t})^2}{4} - \frac{x_{t+1}^2}{2} - \frac{\mu_{1:t}^2}{2})d\mu_\theta
+    \\
+    &= \frac{\sqrt{\pi}}{2\pi}\exp(\frac{(x+\mu_{1:t})^2}{4} - \frac{x_{t+1}^2}{2} - \frac{\mu_{1:t}^2}{2}) \int \frac{1}{2\pi\frac{1}{2}}\exp(-\frac{1}{2}\frac{(\mu_\theta - \frac{(x+\mu_{1:t})^2}{2})^2}{1/2})d\mu_\theta
+    \\
+    &= \frac{\sqrt{\pi}}{2\pi}\exp(\frac{(x+\mu_{1:t})^2}{4} - \frac{x_{t+1}^2}{2} - \frac{\mu_{1:t}^2}{2})
+\end{align}
+
+
+\section{Mit Sebastian}
+Filter Equation
+\begin{align}
+    P(z_{t+1},\theta_{t+1} |  x_{t+1}) = \alpha \cdot P(x_{t+1} | \theta) \cdot \sum_{z_t}P(z_{t+1}|z_{t}) \cdot P(z_{t}, \theta | x_{1:t})
+\end{align}
+
+$\theta$ is now in $z$:
+\begin{align}
+    P(z_{t+1} | x_{1:t+1}) &= \alpha \cdot P(x_{t+1} | z_{t+1}) \cdot \sum_{z_t}P(z_{t+1}|z_{t}) \cdot P(z_{t} | x_{1:t})
+\\
+    P(z_{t+1} | x_{1:t+1}) &= \alpha \cdot P(x_{t+1} | z_{t+1}) \cdot \sum_{z_t} P(z_{t+1}, z_t | x_{1:t})
+\\
+    P(z_{t+1} | x_{1:t+1}) &= \alpha \cdot P(x_{t+1} | z_{t+1}) \cdot P(z_{t+1} | x_{1:t})
+\\
+    P(z_{t+1} | x_{1:t+1}) &= \alpha \cdot P(x_{t+1}, z_{t+1} | x_{1:t})
+\\
+    P(z_{t+1} | x_{t+1}, x_{1:t}) &= \alpha \cdot P(x_{t+1}, z_{t+1} | x_{1:t})
+\\
+    \frac{P(z_{t+1} , x_{t+1} | x_{1:t})}{P(x_{t+1} | x_{1:t})} &= P(x_{t+1}, z_{t+1} | x_{1:t})
+\\
+    P(z_{t+1} | x_{1:t+1}) &= \frac{P(x_{t+1}| z_{t+1}) \cdot P(z_{t+1} | x_{1:t})}{P(x_{t+1} | x_{1:t})}
+\end{align}
+
+\section{Andreas}
+Target:
+\begin{align}
+    P(z_{t+1}, \theta_1, \theta_2 | x_{1:t+1}) &= \frac{P(x_{t+1}, z_{t+1}, \theta_1, \theta_2 | x_{1:t})}{P(x_{t+1} | x_{1:t})}
+\\
+    P(z_{t+1}, \theta_1, \theta_2 | x_{1:t+1}) &= \alpha \cdot P(x_{t+1}, z_{t+1}, \theta_1, \theta_2 | x_{1:t})
+\\
+    P(z_{t+1}, \theta_1, \theta_2 | x_{1:t+1}) &= \alpha \cdot P(x_{t+1} | z_{t+1}, \theta_1, \theta_2) \cdot P( z_{t+1}, \theta_1, \theta_2 | x_{1:t})
+\\
+\begin{split}
+    P(z_{t+1}, \theta_1, \theta_2 | x_{1:t+1}) &= \alpha \cdot P(x_{t+1} | z_{t+1}, \theta_1, \theta_2) \cdot \\
+    &\sum_{z_t} P(z_{t+1} | z_t) \cdot P(z_t, \theta_1, \theta_2 | x_{1:t})
+\end{split}
+\\
+\begin{split}
+    P(z_{t+1}, \theta_1, \theta_2 | x_{1:t+1}) &= \alpha \cdot P(x_{t+1} | z_{t+1}, \theta_1, \theta_2) \cdot \\ &\sum_{z_t} P(z_{t+1} | z_t) \cdot P(z_t | x_{1:t}) \cdot P(\theta_1 | x_{1:t}) \cdot P(\theta_2 | x_{1:t})
+\end{split}
+\end{align}
+For each Iteration:
+\begin{align}
+    P(z_{t+1}, \theta_1, \theta_2 | x_{1:t+1}) = \alpha \cdot P(x_{t+1}, z_{t+1}, \theta_1, \theta_2 | x_{1:t})
+\\ 
+    z_{t+1} = 1: P(\theta_1 | x_{1:t+1}) = \alpha \cdot P(x_{t+1} | \theta_1) \cdot P( \theta_1 | x_{1:t})
+\\
+    z_{t+1} = 2: P(\theta_2 | x_{1:t+1}) = \alpha \cdot P(x_{t+1} | \theta_2) \cdot P( \theta_2 | x_{1:t})
+\end{align}
+To update $\theta$:
+\begin{align}
+    \mu_{t+1} &= \frac{1}{\sigma_{t+1}^2} \left. \Bigg( \frac{\sum_t x}{\sigma_{t+1}^2} + \frac{\mu_t}{\sigma_{t}^2} \right. \Bigg)
+\\
+    \frac{1}{\sigma_{t+1}^2} &= \frac{1}{\sigma_{t}^2} + \frac{t}{\sigma_{t}^2}
+\end{align}
+\section{Conjugate Gaussian}
+\subsection{Multiplication of two Gaussian}
+For the update at each iteration $ P(\theta | x_{1:t+1}) = \alpha \cdot P(x_{t+1} | \theta) \cdot P( \theta | x_{1:t}) $ needs to be computed. $P(x_{t+1} | \theta)$ and $P( \theta | x_{1:t})$ are both assumed to be Gaussian. This leads to the following 
+derivation of updates:\\
+Let $f$ and $g$ be Normal PDF
+\begin{align}
+%F \nonumber\\
+    f(x) = N(x | \mu_1, \sigma_1), \quad g(x) = N(x | \mu_2, \sigma_2) 
+\end{align}
+\begin{align}
+    f(x)\cdot g(x) = \frac{1}{2\pi \sigma_1 \sigma_2}\exp\left. \Bigg(-\left. \Bigg(\frac{(x-\mu_1)^2}{2\sigma_1^2} + \frac{(x-\mu_2)^2}{2\sigma_2^2}\right. \Bigg)\right. \Bigg)
+\end{align}
+Looking into the exponent
+\begin{align}
+    %\text{} \nonumber \\
+    \frac{(x-\mu_1)^2}{2\sigma_1^2} + \frac{(x-\mu_2)^2}{2\sigma_2^2}
+    &= \frac{(\sigma_1^2+\sigma_2^2)x^2 - 2(\mu_1\sigma_2^2+\mu_2\sigma_1^2)x + \mu_1^2\sigma_2^2 + \mu_2^2\sigma_1^2}{2\sigma_2^2\sigma_1^2}
+    \\
+    &= \frac{x^2 - 2\frac{\mu_1\sigma_2^2+\mu_2\sigma_1^2}{\sigma_1^2+\sigma_2^2}x + \frac{\mu_1^2\sigma_2^2 + \mu_2^2\sigma_1^2}{\sigma_1^2+\sigma_2^2}}{2\frac{\sigma_2^2\sigma_1^2}{\sigma_1^2+\sigma_2^2}}\label{twoGaussEx}
+\end{align}
+The exponent of a regular Gaussian can be rewritten as the following:
+\begin{align}
+   & \frac{(\mu - x)^2}{2\sigma^2}\\
+    =\; &\frac{\mu^2 - \mu x + x^2}{2\sigma^2}
+\end{align}
+With that we can infer the new mean and variance of the scaled Gaussian $ P(\theta | x_{1:t+1})$ 
+\begin{align}
+    \mu &= \frac{\mu_1\sigma_2^2+\mu_2\sigma_1^2}{\sigma_1^2+\sigma_2^2}
+    \\
+    \sigma^2 &= \frac{\sigma_2^2\sigma_1^2}{\sigma_1^2+\sigma_2^2}
+\end{align}
+
+\subsection{Derivation from Kevin P. Murphy}
+The problem with this derivation is, that it leads to the correct updates for $\theta$ as defined by Andreas, but the approach is not equivalent to our. 
+\subsubsection{Likelihood}
+$D$ is the data ${x_1,...,x_t}$
+\begin{align}
+    P(D|\mu, \sigma^2) &= P(x_{1:t}|\mu, \sigma^2)
+    \\
+    &= \prod^t P(x_i|\mu, \sigma^2)
+    \\
+    &= (2\pi\sigma^2)^{-\frac{n}{2}}\cdot \exp ( -\frac{1}{2\sigma^2}\sum(x_i-\mu)^2)
+\end{align}
+
+\subsubsection{Prior}
+\begin{align}
+    P(\mu|\mu_0, \sigma^2)
+\end{align}
+
+\subsection{Posterior}
+\begin{align}
+    P(\mu|x_{1:t}) &= \alpha \cdot P(D|\mu, \sigma^2) P(\mu|\mu_0, \sigma^2)
+    \\
+    &= \alpha \cdot \exp ( -\frac{1}{2\sigma^2}\sum(x_i-\mu)^2) \exp ( -\frac{1}{2\sigma^2}(\mu-\mu_0)^2)
+    \\
+    &= \alpha \cdot \exp ( -\frac{1}{2\sigma^2}\sum(x_i-\mu)^2) \exp ( -\frac{1}{2\sigma^2}(\mu-\mu_0)^2)
+    \\
+    &= \alpha \cdot \exp ( -\frac{\mu^2}{2}(\frac{1}{\sigma^2}+\frac{n}{\sigma^2}) + \mu(\frac{\mu_0}{\sigma_0^2}+\frac{\sum x_i}{\sigma^2}) - (\frac{\mu_0^2}{2\sigma_0^2} + \frac{\sum x_i^2}{2\sigma^2})
+    )\label{posteriorMurphy}
+\end{align}
+Now we have to match the coefficients to a regular Gaussian:
+\begin{align}
+    \exp (\frac{1}{2\sigma_n^2}(\mu-\mu_2)^2) = \exp (\frac{1}{2\sigma_n^2}(\mu^2 - 2\mu\mu_n + 2\mu^2))
+\end{align}
+Matching this to equation \cite{posteriorMurphy} yields:
+\begin{align}
+    -\frac{\mu^2}{2\sigma_n^2} &= -\frac{\mu^2}{2}(\frac{1}{\sigma_0^2} + \frac{n}{\sigma^2}) 
+    \\
+ -\frac{1}{\sigma_n^2} &= \frac{1}{\sigma_0^2} + \frac{n}{\sigma^2} 
+\end{align}
+and
+\begin{align}
+    \frac{2\mu\mu_n}{2\sigma_n^2} &= \mu(\frac{\mu_0}{\sigma_0^2}+\frac{\sum x_i}{\sigma^2})
+    \\
+    \frac{\mu_n}{\sigma_n^2} &= \frac{\mu_0}{\sigma_0^2}+\frac{\sum x_i}{\sigma^2}
+\end{align}
+
+
+\section{Algorithms}
+\begin{algorithm}
+    \caption{Digital Assignment Two State Gaussian}
+    \begin{algorithmic}
+        \While{new data }
+        \State $x_{t+1} \gets new data $
+        \State $likelihood State_0 \gets normal(x_{t+1} | \theta_0, 1)$
+        \State $likelihood State_1 \gets normal(x_{t+1} | \theta_1, 1)$
+        \State $\tilde{z}_0 \gets likelihood State_0 \cdot (P(z_0|z_0)P(z_0|x_{1:t}) + P(z_0|z_1)P(z_1|x_{1:t}))$ 
+        \State $\tilde{z}_1 \gets likelihood State_1 \cdot (P(z_1|z_0)P(z_0|x_{1:t}) + P(z_1|z_1)P(z_1|x_{1:t}))$ 
+        \State $z_0 \gets z_0/(z_0+z_1)$
+        \State $z_1 \gets z_1/(z_0+z_1)$
+        \If{$z_0 \geq z_1$}
+        \State $\sigma_0 \gets \frac{1}{1/\theta_0 + t}$
+        \State $\theta_0 \gets \frac{\theta_0/\sigma_0 + \sum x / \sigma_0}{1/\sigma_0 + t/\sigma_0}$
+        \Else
+        \State $\sigma_1 \gets \frac{1}{1/\theta_1 + t}$
+        \State $\theta_1 \gets \frac{\theta_1/\sigma_1 + \sum x / \sigma_1}{1/\sigma_1 + t/\sigma_1}$
+        \EndIf
+        \State
+        \EndWhile
+        \EndProcedure
+    \end{algorithmic}
+\end{algorithm}
+
+    \subsection{Evaluation Methods}
+    \begin{enumerate}
+        \item How long does it take to find the true mean
+        \item False Positive rate of predicting $z$
+        \item How does the algorithm reacts to far off prior values to start with
+        \item How does the algorithm reacts to the wrong number of states
+    \end{enumerate}
+    
+\section{Estimating Markov Transition Matrix}
+
+%https://stats.stackexchange.com/questions/14360/estimating-markov-chain-probabilities
+Since the time series is discrete valued, one can estimate the transition probabilities by the sample proportions. Let $Y_t$ be the state of the process at time $t$, $M$ be the transition matrix then
+\begin{align}
+    M_{ij}=P(Y_t=j|Y_{t-1}=i)
+\end{align}
+
+Since this is a markov chain, this probability depends only on $Y_{t−1}$, so it can be estimated by the sample proportion. Let $n_{ik}$ be the number of times that the process moved from state $i$ to $k$. Then,
+
+\begin{align}
+    \hat{M_{ij}}=\frac{n_{ij}}{\sum^m_{k=1}n_{ik}}
+\end{align}
+
+
+where $m$ is the number of possible states. The denominator, $\sum^m_{k=1}n_{ik}$, is the total number of movements out of state $i$. Estimating the entries in this way actually corresponds to the maximum likelihood estimator of the transition matrix, viewing the outcomes as multinomial, conditioned on $Y_{t-1}$.
+
+\end{document}
+
+%https://en.wikipedia.org/wiki/Maximum_a_posteriori_estimation
